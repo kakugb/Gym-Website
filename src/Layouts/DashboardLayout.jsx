@@ -1,76 +1,61 @@
+// layouts/DashboardLayout.jsx
 import { useState } from "react";
+import Navbar from "../components/Navbar";
+import Sidebar from "../components/Sidebar";
+import DashboardContentSwitcher from "../components/DashboardContentSwitcher";
 import { getUser, logoutUser } from "../auth";
 import { useNavigate } from "react-router-dom";
 
 export default function DashboardLayout({ sidebarItems, role }) {
   const user = getUser();
   const navigate = useNavigate();
-
-  const [activeView, setActiveView] = useState("Dashboard");
-  const [mainContent, setMainContent] = useState(`Welcome ${user.username}`);
+  const [activeSection, setActiveSection] = useState("Dashboard");
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [showNavbarMenu, setShowNavbarMenu] = useState(false);
 
   const handleLogout = () => {
     logoutUser();
     navigate("/login");
   };
 
-  const handleNavbarClick = (view) => {
-    setActiveView(view);
-    setMainContent(`Welcome to ${view}`);
+  const handleSidebarClick = (section) => {
+    setActiveSection(section);
+    setShowSidebar(false); // for mobile
   };
 
-  const handleSidebarClick = (item) => {
-    setActiveView("Dashboard");
-    setMainContent(`Welcome to ${item}`);
+  const handleNavbarClick = (section) => {
+    setActiveSection(section);
+    setShowSidebar(false);
+    setShowNavbarMenu(false);
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen flex-col md:flex-row">
+      {/* Sidebar */}
+      {activeSection === "Dashboard" || sidebarItems.includes(activeSection) ? (
+        <Sidebar
+          items={sidebarItems}
+          onItemClick={handleSidebarClick}
+          showSidebar={showSidebar}
+          setShowSidebar={setShowSidebar}
+          role={role}
+        />
+      ) : null}
 
-      {activeView === "Dashboard" && (
-        <div className="w-64 bg-gray-800 text-white p-4">
-          <h2 className="text-xl font-bold mb-6 capitalize">{role} Panel</h2>
-          <ul>
-            {sidebarItems.map((item) => (
-              <li
-                key={item}
-                onClick={() => handleSidebarClick(item)}
-                className="py-2 hover:text-blue-300 cursor-pointer"
-              >
-                {item}
-              </li>
-            ))}
-          </ul>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        <Navbar
+          username={user.username}
+          onLogout={handleLogout}
+          onNavigate={handleNavbarClick}
+          showNavbarMenu={showNavbarMenu}
+          setShowNavbarMenu={setShowNavbarMenu}
+          toggleSidebar={() => setShowSidebar(!showSidebar)}
+          isDashboardView={activeSection === "Dashboard" || sidebarItems.includes(activeSection)}
+        />
+        <div className="p-6 overflow-auto">
+          <DashboardContentSwitcher section={activeSection} role={role} />
         </div>
-      )}
-
- 
-      <div className="flex-1">
- 
-        <div className="bg-gray-100 p-4 flex justify-between items-center">
-          <div className="space-x-4">
-            <button onClick={() => handleNavbarClick("Home")} className="hover:underline">
-              Home
-            </button>
-            <button onClick={() => handleNavbarClick("About")} className="hover:underline">
-              About
-            </button>
-            <button onClick={() => handleNavbarClick("Introduction")} className="hover:underline">
-              Introduction
-            </button>
-            <button onClick={() => handleNavbarClick("Dashboard")} className="hover:underline">
-              Dashboard
-            </button>
-          </div>
-          <div>
-            <span className="mr-4 capitalize">{user.username}</span>
-            <button onClick={handleLogout} className="bg-red-500 text-white px-3 py-1 rounded">
-              Logout
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6 text-xl font-semibold">{mainContent}</div>
       </div>
     </div>
   );
